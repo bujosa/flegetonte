@@ -15,16 +15,21 @@ func main() {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/send-email", func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
+		err := r.ParseMultipartForm(32 << 20)
 		if err != nil {
 			http.Error(w, "Error parsing form data", http.StatusBadRequest)
 			return
 		}
 
-		to := r.Form.Get("receiptEmail")
-		subject := r.Form.Get("subject")
-		firstName := r.Form.Get("firstName")
-		lastName := r.Form.Get("lastName")
+		to := r.FormValue("email")
+		subject := r.FormValue("subject")
+		firstName := r.FormValue("firstName")
+		lastName := r.FormValue("lastName")
+
+		if to == "" || subject == "" || firstName == "" || lastName == "" {
+			http.Error(w, "Missing form data", http.StatusBadRequest)
+			return
+		}
 
 		m := templates.UsePrimaryTemplate(to, subject, firstName, lastName)
 		email.SendEmail(m)
